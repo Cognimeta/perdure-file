@@ -1,0 +1,20 @@
+name:           perdure-file
+version:        0.0.1
+cabal-version:  >=1.2
+build-type:     Simple
+author:         Patrick
+
+library
+  hs-source-dirs:  src
+  build-depends:   
+    base >= 4,
+    cognimeta-utils == 0.1.3,
+    mtl >=2.1.3 && <2.2,
+    containers >=0.5.5 && <0.6,
+    bytestring >=0.10.4 && <0.11
+  ghc-options:     -Wall
+  exposed-modules: 
+                   Database.Perdure.LocalStoreFile,
+                   Database.Perdure.StoreFile,
+                   Database.Perdure.Validator
+
