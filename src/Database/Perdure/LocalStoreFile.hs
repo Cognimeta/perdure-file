@@ -14,15 +14,18 @@ or implied. See the License for the specific language governing permissions and 
 {-# LANGUAGE TemplateHaskell, TypeFamilies, Rank2Types, GADTs, TupleSections, DeriveDataTypeable, GeneralizedNewtypeDeriving, ScopedTypeVariables, FlexibleContexts #-}
 
 module Database.Perdure.LocalStoreFile (
+    RawFile(..),
     RawStoreFile(..),
     storeFileWriteWords,
     storeFileReadWords,
     LocalStoreFile,
     withFileStoreFile,
+    withRawFile,
     module Database.Perdure.StoreFile,
     narrowBufsLen,
     storeFileWrite1,
-    storeFileRead1
+    storeFileRead1,
+    ByteAddr
 ) where
 
 

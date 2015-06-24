@@ -56,7 +56,7 @@ class SyncableStoreFile f where
   
 data BasicRef w = BasicRef {
     refStart :: {-# UNPACK #-} !(Len Word64 Word64),
-    refSize :: {-# UNPACK #-} !(Len w Word32)}
+    refSize :: {-# UNPACK #-} !(Len w Word32)} deriving Show
 
 type Span = SortedPair Word64
 
