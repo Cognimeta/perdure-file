@@ -31,6 +31,7 @@ module Database.Perdure.LocalStoreFile (
 
 import Prelude ()
 import Cgm.Prelude
+import Data.Bool
 import Data.Typeable
 import qualified Data.ByteString as B
 import Control.Concurrent
