@@ -52,7 +52,7 @@ import System.IO
 --import System.Posix.IO
 import System.Posix.Types
 import Data.Bits
-import Control.Monad.Error hiding (sequence_)
+import Control.Monad.Except hiding (sequence_)
 import Database.Perdure.StoreFile(SyncableStoreFile(..))
 --import System.Posix.Fsync -- not needed with raw devices
 
@@ -182,13 +182,13 @@ instance Schedule CLook where
 --
     
 class Show f => RawFile f where
-  fileWriteRaw :: f -> Len Word8 Word64 -> [ArrayRange (PrimArray Pinned Word8)] -> ErrorT String IO ()
-  fileReadRaw :: f -> Len Word8 Word64 -> ArrayRange (STPrimArray RealWorld Pinned Word8) -> ErrorT String IO ()
+  fileWriteRaw :: f -> Len Word8 Word64 -> [ArrayRange (PrimArray Pinned Word8)] -> ExceptT String IO ()
+  fileReadRaw :: f -> Len Word8 Word64 -> ArrayRange (STPrimArray RealWorld Pinned Word8) -> ExceptT String IO ()
   fileFlush :: f -> IO ()
   
 instance RawFile Handle where
   fileWriteRaw h seek bufs = lift $ hSeekX h seek >> sequence_ (withArrayPtr (hPutBufLen h) <$> bufs) -- TODO fix error handling
-  fileReadRaw h seek buf = ErrorT $ fmap (boolEither "" () . (== arrayLen buf)) $ hSeekX h seek >> withArrayPtr (hGetBufLen h) buf
+  fileReadRaw h seek buf = ExceptT $ fmap (boolEither "" () . (== arrayLen buf)) $ hSeekX h seek >> withArrayPtr (hGetBufLen h) buf
   fileFlush = hFlush  -- todo fsync or fdatasync on FD so we flush to the drive (and the platter?, see comment below)
 
 performAll :: (Schedule s, RawFile f) => f -> s -> IO ()
@@ -196,11 +196,11 @@ performAll f s = maybe (return ()) (\(op, s') -> perform f op >> performAll f s'
 
 perform :: RawFile f => f -> PosOp -> IO ()
 perform f (PosOp seek rw) = {- putStrLn ("about to perform " ++ show p) >> -} case rw of 
-  WriteOp bufs k -> runErrorT (fileWriteRaw f seek bufs) >>= (log' >>) . either (const $ k False) (const $ k True) where
+  WriteOp bufs k -> runExceptT (fileWriteRaw f seek bufs) >>= (log' >>) . either (const $ k False) (const $ k True) where
     --log = putStrLn ("Wrote " ++ showLen (sum $ fmap arrayLen bufs) ++ " at " ++ showLen seek ++ " on " ++ show f {- ++ ": " ++ show bufs -})
     log' = return ()
     --log = putStr "w"
-  ReadOp buf k -> runErrorT (fileReadRaw f seek buf) >>= (log' >>) . either (const $ k False) (const $ k True) where
+  ReadOp buf k -> runExceptT (fileReadRaw f seek buf) >>= (log' >>) . either (const $ k False) (const $ k True) where
     --log = putStrLn ("Read " ++ showLen (arrayLen buf) ++ " at " ++ showLen seek ++ " from " ++ show f)
     log' = return ()
 
@@ -239,7 +239,7 @@ instance Exception ChildException
 
 -- | Opens the specified file as a LocalStoreFile, runs the provided function and closes the file.
 -- Do not make concurrent calls on the same file, place concurrency in the passed function.
-withFileStoreFile :: FilePath -> (LocalStoreFile -> IO a) -> ErrorT String IO a
+withFileStoreFile :: FilePath -> (LocalStoreFile -> IO a) -> ExceptT String IO a
 withFileStoreFile path user = lift $ withBinaryFile path ReadWriteMode $ \h -> hSetBuffering h NoBuffering >> withRawFile h user
   
 withRawFile :: (RawFile f, Show f) => f -> (LocalStoreFile -> IO a) -> IO a
